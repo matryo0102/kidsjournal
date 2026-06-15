@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 아이 관찰 기록지</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --cream: #FBF7F2; --cream2: #F5EDE0; --border: #D6C4A8;
+    --text: #3A2E22; --text2: #7A6A55; --text3: #B0A08C;
+    --boy: #5B8DB8; --boy-light: #E8F1F8; --boy-mid: #A8C8E0;
+    --girl: #C87B9A; --girl-light: #F8EEF3; --girl-mid: #E8B8CC;
+    --accent: #B87333; --white: #FFFFFF; --red: #C87070;
+    --radius: 12px; --radius-lg: 20px;
+    --shadow: 0 2px 12px rgba(58,46,34,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* HEADER */
+  .app-header {
+    background: var(--white); border-bottom: 1px solid var(--border);
+    padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-back {
+    width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 50%;
+    background: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--text2); transition: background 0.15s;
+  }
+  .header-back:hover { background: var(--cream); }
+  .header-title { font-family: 'Noto Serif KR', serif; font-size: 17px; font-weight: 500; }
+  .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  /* DASHBOARD */
+  .dash-hero { background: var(--white); padding: 40px 24px 32px; border-bottom: 1px solid var(--border); text-align: center; }
+  .dash-hero-title { font-family: 'Noto Serif KR', serif; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .dash-hero-sub { font-size: 13px; color: var(--text3); letter-spacing: 0.5px; }
+  .dash-date-strip { background: var(--cream2); padding: 10px 24px; text-align: center; font-size: 13px; color: var(--text2); border-bottom: 1px solid var(--border); }
+  .dash-children { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 24px; max-width: 700px; margin: 0 auto; }
+
+  /* CHILD CARD */
+  .child-card {
+    background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border);
+    padding: 28px 20px 24px; text-align: center; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s; box-shadow: var(--shadow);
+  }
+  .child-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(58,46,34,0.13); }
+  .child-avatar {
+    width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+  .child-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .child-avatar-emoji { font-size: 32px; }
+  .child-card.boy .child-avatar { background: var(--boy-light); border: 2px solid var(--boy-mid); }
+  .child-card.girl .child-avatar { background: var(--girl-light); border: 2px solid var(--girl-mid); }
+  .child-name { font-family: 'Noto Serif KR', serif; font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .child-card.boy .child-name { color: var(--boy); }
+  .child-card.girl .child-name { color: var(--girl); }
+  .child-age { font-size: 12px; color: var(--text3); margin-bottom: 10px; }
+  .child-gender-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-bottom: 12px; }
+  .child-card.boy .child-gender-badge { background: var(--boy-light); color: var(--boy); }
+  .child-card.girl .child-gender-badge { background: var(--girl-light); color: var(--girl); }
+  .child-photo-btn {
+    display: block; width: 100%; margin-top: 10px;
+    padding: 5px; font-size: 11px; color: var(--text3);
+    background: none; border: 1px dashed var(--border); border-radius: 8px;
+    cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+    transition: all 0.15s;
+  }
+  .child-photo-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .child-stat { font-size: 12px; color: var(--text3); margin-top: 6px; }
+  .child-stat span { font-weight: 500; color: var(--text2); }
+
+  /* DASHBOARD CALENDAR */
+  .dash-cal-section { padding: 0 24px 16px; max-width: 700px; margin: 0 auto; }
+  .dash-cal-section .section-title { font-family: 'Noto Serif KR', serif; font-size: 15px; font-weight: 500; color: var(--text2); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .calendar-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-title { font-family: 'Noto Serif KR', serif; font-size: 15px; font-weight: 500; }
+  .cal-nav { display: flex; gap: 4px; }
+  .cal-nav button { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 8px; background: none; cursor: pointer; font-size: 14px; color: var(--text2); }
+  .cal-nav button:hover { background: var(--cream); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-day-label { text-align: center; font-size: 11px; color: var(--text3); padding: 4px; }
+  .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 12px; border-radius: 8px; cursor: default; flex-direction: column; gap: 2px; }
+  .cal-day.has-record { cursor: pointer; }
+  .cal-day.has-record:hover { background: var(--cream2); }
+  .cal-day.today { background: var(--cream2); font-weight: 500; color: var(--accent); }
+  .cal-dots { display: flex; gap: 2px; }
+  .cal-dot { width: 4px; height: 4px; border-radius: 50%; }
+  .cal-dot.boy { background: var(--boy); }
+  .cal-dot.girl { background: var(--girl); }
+
+  /* CAL DAY POPUP */
+  .cal-day-popup {
+    margin-top: 12px; background: var(--white); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+  }
+  .cal-day-popup-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 10px; }
+  .cal-popup-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .cal-popup-tab {
+    padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: none; font-family: 'Noto Sans KR', sans-serif; color: var(--text2);
+  }
+  .cal-popup-tab.active-boy { background: var(--boy); color: white; border-color: var(--boy); }
+  .cal-popup-tab.active-girl { background: var(--girl); color: white; border-color: var(--girl); }
+
+  /* DASH ACTIONS */
+  .dash-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 24px 24px; max-width: 700px; margin: 0 auto; }
+  .action-btn { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; cursor: pointer; text-align: left; transition: background 0.15s; box-shadow: var(--shadow); }
+  .action-btn:hover { background: var(--cream2); }
+  .action-btn-icon { font-size: 22px; margin-bottom: 8px; }
+  .action-btn-label { font-size: 13px; font-weight: 500; color: var(--text); }
+  .action-btn-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* RECENT */
+  .dash-recent { padding: 0 24px 40px; max-width: 700px; margin: 0 auto; }
+  .section-title { font-family: 'Noto Serif KR', serif; font-size: 15px; font-weight: 500; color: var(--text2); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .recent-empty { text-align: center; padding: 32px; color: var(--text3); font-size: 13px; background: var(--white); border-radius: var(--radius); border: 1px dashed var(--border); }
+  .recent-list { display: flex; flex-direction: column; gap: 8px; }
+  .recent-item { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.1s; }
+  .recent-item:hover { background: var(--cream2); }
+  .recent-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .recent-dot.boy { background: var(--boy); }
+  .recent-dot.girl { background: var(--girl); }
+  .recent-info { flex: 1; min-width: 0; }
+  .recent-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recent-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .recent-mood { font-size: 16px; }
+
+  /* PROFILE PAGE */
+  .child-hero { padding: 28px 24px 20px; text-align: center; }
+  .child-hero-avatar {
+    width: 88px; height: 88px; border-radius: 50%; margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 38px; overflow: hidden; position: relative; cursor: pointer;
+  }
+  .child-hero-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .child-hero-avatar-emoji { font-size: 38px; }
+  .hero-boy .child-hero-avatar { background: var(--boy-light); border: 3px solid var(--boy-mid); }
+  .hero-girl .child-hero-avatar { background: var(--girl-light); border: 3px solid var(--girl-mid); }
+  .child-hero-name { font-family: 'Noto Serif KR', serif; font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .hero-boy .child-hero-name { color: var(--boy); }
+  .hero-girl .child-hero-name { color: var(--girl); }
+  .child-hero-info { font-size: 13px; color: var(--text3); }
+  .hero-photo-hint { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+  /* TABS */
+  .profile-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--white); padding: 0 24px; }
+  .tab-btn { padding: 12px 16px; border: none; border-bottom: 2px solid transparent; background: none; font-size: 13px; color: var(--text3); cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: color 0.15s; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+  .tab-panel { display: none; padding: 20px 24px; max-width: 700px; margin: 0 auto; }
+  .tab-panel.active { display: block; }
+
+  /* BUTTONS */
+  .btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: var(--radius); border: none; cursor: pointer; font-size: 13px; font-weight: 500; font-family: 'Noto Sans KR', sans-serif; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-boy { background: var(--boy); color: white; }
+  .btn-girl { background: var(--girl); color: white; }
+
+  /* RECORDS */
+  .records-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .record-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; cursor: pointer; transition: box-shadow 0.15s; }
+  .record-card:hover { box-shadow: var(--shadow); }
+  .record-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .record-date { font-size: 11px; color: var(--text3); }
+  .record-mood-badge { font-size: 18px; }
+  .record-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .record-preview { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .record-photo-thumb { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+  .record-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+  .tag { padding: 2px 8px; background: var(--cream2); border-radius: 20px; font-size: 11px; color: var(--text2); }
+  .milestone-badge { padding: 2px 8px; background: #FFF8E6; border-radius: 20px; font-size: 11px; color: #B07D20; border: 1px solid #F0D890; }
+  .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+  .search-bar input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 14px; background: var(--white); font-family: 'Noto Sans KR', sans-serif; color: var(--text); }
+  .search-bar input:focus { outline: none; border-color: var(--accent); }
+
+  /* GROWTH */
+  .growth-form { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+  .growth-form-title { font-size: 13px; font-weight: 500; margin-bottom: 12px; color: var(--text2); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: end; }
+  .form-group label { font-size: 11px; color: var(--text3); display: block; margin-bottom: 4px; }
+  .form-group input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--cream); font-family: 'Noto Sans KR', sans-serif; color: var(--text); }
+  .form-group input:focus { outline: none; border-color: var(--accent); }
+  .chart-container { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+  .chart-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 12px; }
+  .chart-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .chart-tab { padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; cursor: pointer; background: none; font-family: 'Noto Sans KR', sans-serif; color: var(--text2); transition: all 0.15s; }
+  .chart-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* MILESTONES */
+  .milestone-form { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+  .milestone-item { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  .milestone-icon { font-size: 22px; }
+  .milestone-info { flex: 1; }
+  .milestone-text { font-size: 13px; font-weight: 500; }
+  .milestone-date-text { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .milestone-del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 16px; padding: 4px; }
+  .milestone-del:hover { color: var(--red); }
+
+  /* RECORD FORM */
+  #page-record-form { min-height: 100vh; background: var(--cream); }
+  .record-form-body { max-width: 700px; margin: 0 auto; padding: 24px; }
+  .form-section { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .form-section-title { font-size: 12px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .form-section-title span { font-size: 16px; }
+  .form-field { margin-bottom: 16px; }
+  .form-field:last-child { margin-bottom: 0; }
+  .form-field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
+  .form-field input[type="text"], .form-field input[type="date"], .form-field textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--cream); font-family: 'Noto Sans KR', sans-serif; color: var(--text); transition: border-color 0.15s; }
+  .form-field input:focus, .form-field textarea:focus { outline: none; border-color: var(--accent); background: var(--white); }
+  .form-field textarea { resize: vertical; min-height: 80px; line-height: 1.7; }
+  .mood-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mood-opt { width: 48px; height: 48px; border: 2px solid var(--border); border-radius: 12px; background: var(--cream); cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .mood-opt:hover { border-color: var(--accent); }
+  .mood-opt.selected { border-color: var(--accent); background: var(--cream2); transform: scale(1.1); }
+  .mood-canvas-wrap { margin-top: 12px; }
+  .mood-canvas-wrap label { font-size: 12px; color: var(--text3); display: block; margin-bottom: 6px; }
+  #moodCanvas { border: 1px solid var(--border); border-radius: 8px; cursor: crosshair; background: var(--cream); display: block; }
+  .canvas-btns { display: flex; gap: 6px; margin-top: 6px; }
+  .btn-sm { padding: 5px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--white); font-size: 12px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; color: var(--text2); }
+  .btn-sm:hover { background: var(--cream); }
+  .photo-upload-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 32px; text-align: center; cursor: pointer; transition: all 0.15s; }
+  .photo-upload-area:hover { border-color: var(--accent); background: var(--cream2); }
+  .photo-upload-area input[type="file"] { display: none; }
+  .photo-upload-icon { font-size: 32px; color: var(--text3); margin-bottom: 8px; }
+  .photo-upload-text { font-size: 13px; color: var(--text3); }
+  .photo-preview-wrap { position: relative; display: block; }
+  .photo-preview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; display: block; }
+  .photo-remove { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.55); color: white; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .tags-input-wrap { display: flex; gap: 6px; }
+  .tags-input-wrap input { flex: 1; }
+  .tags-list { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+  .tag-removable { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: var(--cream2); border-radius: 20px; font-size: 12px; color: var(--text2); }
+  .tag-removable button { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 12px; padding: 0; line-height: 1; }
+  .milestone-check-row { display: flex; align-items: center; gap: 8px; }
+  .milestone-check-row input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+  .milestone-check-row label { font-size: 13px; color: var(--text2); cursor: pointer; }
+  .form-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 24px 32px; max-width: 700px; margin: 0 auto; }
+  .btn-cancel { padding: 11px 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--white); font-size: 13px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; color: var(--text2); }
+  .btn-cancel:hover { background: var(--cream2); }
+  .btn-save { padding: 11px 24px; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; color: white; }
+  .btn-save:hover { opacity: 0.85; }
+
+  /* DETAIL */
+  .detail-body { max-width: 700px; margin: 0 auto; padding: 24px; }
+  .detail-photo { width: 100%; max-height: 260px; object-fit: cover; border-radius: var(--radius); margin-bottom: 20px; display: block; }
+  .detail-date { font-size: 12px; color: var(--text3); margin-bottom: 8px; }
+  .detail-title { font-family: 'Noto Serif KR', serif; font-size: 22px; font-weight: 700; margin-bottom: 16px; line-height: 1.4; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section-label { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .detail-section-content { font-size: 14px; line-height: 1.8; color: var(--text); white-space: pre-wrap; }
+  .detail-mood-row { display: flex; align-items: center; gap: 10px; }
+  .detail-mood-emoji { font-size: 28px; }
+  .detail-mood-drawing { max-width: 160px; border-radius: 8px; border: 1px solid var(--border); }
+  .detail-actions { display: flex; gap: 8px; margin-top: 24px; }
+  .btn-delete { padding: 10px 18px; border: 1px solid var(--red); border-radius: var(--radius); background: none; font-size: 13px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; color: var(--red); }
+  .btn-delete:hover { background: #fff0f0; }
+  .btn-edit { padding: 10px 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--white); font-size: 13px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif; color: var(--text2); }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text); color: white; padding: 12px 20px; border-radius: var(--radius); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 480px) {
+    .dash-children { grid-template-columns: 1fr; }
+    .dash-actions { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- hidden file inputs for child photos -->
+<input type="file" id="photoInputGyohyun" accept="image/*" style="display:none" onchange="handleChildPhoto(event,'교현')">
+<input type="file" id="photoInputGyoyun" accept="image/*" style="display:none" onchange="handleChildPhoto(event,'교윤')">
+<input type="file" id="photoInputProfile" accept="image/*" style="display:none" onchange="handleProfilePhoto(event)">
+
+<!-- ========== DASHBOARD ========== -->
+<div id="page-dashboard" class="page active">
+  <div class="dash-hero">
+    <div class="dash-hero-title">🌱 우리 아이 관찰 기록지</div>
+    <div class="dash-hero-sub">이교현 · 이교윤의 소중한 하루하루</div>
+  </div>
+  <div class="dash-date-strip" id="todayStrip"></div>
+
+  <div class="dash-children">
+    <div class="child-card boy" onclick="openChildProfile('교현')">
+      <div class="child-avatar" id="dashAvatar교현">
+        <span class="child-avatar-emoji">👦</span>
+      </div>
+      <div class="child-name">이교현</div>
+      <div class="child-age" id="gyohyun-age"></div>
+      <div class="child-gender-badge">우리집 왕자님 👑</div>
+      <div class="child-stat">기록 <span id="gyohyun-count">0</span>개</div>
+      <button class="child-photo-btn" onclick="event.stopPropagation(); document.getElementById('photoInputGyohyun').click()">📷 사진 변경</button>
+    </div>
+    <div class="child-card girl" onclick="openChildProfile('교윤')">
+      <div class="child-avatar" id="dashAvatar교윤">
+        <span class="child-avatar-emoji">👧</span>
+      </div>
+      <div class="child-name">이교윤</div>
+      <div class="child-age" id="gyoyun-age"></div>
+      <div class="child-gender-badge">우리집 공주님 👸</div>
+      <div class="child-stat">기록 <span id="gyoyun-count">0</span>개</div>
+      <button class="child-photo-btn" onclick="event.stopPropagation(); document.getElementById('photoInputGyoyun').click()">📷 사진 변경</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD CALENDAR -->
+  <div class="dash-cal-section">
+    <div class="section-title">달력으로 보기</div>
+    <div class="calendar-wrap">
+      <div class="cal-header">
+        <div class="cal-title" id="dashCalTitle"></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="cal-nav">
+            <button onclick="dashChangeMonth(-1)">‹</button>
+            <button onclick="dashChangeMonth(1)">›</button>
+          </div>
+        </div>
+      </div>
+      <div class="cal-grid" id="dashCalGrid"></div>
+    </div>
+    <div id="dashCalPopup"></div>
+  </div>
+
+  <div class="dash-actions">
+    <button class="action-btn" onclick="openChildProfile('교현')">
+      <div class="action-btn-icon">👦</div>
+      <div class="action-btn-label">교현이 기록</div>
+      <div class="action-btn-sub">기록 · 성장 · 마일스톤</div>
+    </button>
+    <button class="action-btn" onclick="openChildProfile('교윤')">
+      <div class="action-btn-icon">👧</div>
+      <div class="action-btn-label">교윤이 기록</div>
+      <div class="action-btn-sub">기록 · 성장 · 마일스톤</div>
+    </button>
+  </div>
+
+  <div class="dash-recent">
+    <div class="section-title">최근 기록</div>
+    <div id="recentList"></div>
+  </div>
+</div>
+
+<!-- ========== CHILD PROFILE ========== -->
+<div id="page-profile" class="page">
+  <div class="app-header">
+    <button class="header-back" onclick="goBack('dashboard')">←</button>
+    <div class="header-title" id="profileHeaderTitle"></div>
+    <div class="header-right">
+      <button class="btn-primary" id="profileAddBtn" onclick="openNewRecord()">+ 새 기록</button>
+    </div>
+  </div>
+  <div id="profileHero" class="child-hero">
+    <div class="child-hero-avatar" id="profileAvatarWrap" onclick="document.getElementById('photoInputProfile').click()">
+      <span class="child-hero-avatar-emoji" id="profileAvatarEmoji"></span>
+    </div>
+    <div class="child-hero-name" id="profileName"></div>
+    <div class="child-hero-info" id="profileInfo"></div>
+    <div class="hero-photo-hint">아바타를 눌러 사진 변경</div>
+  </div>
+  <div class="profile-tabs">
+    <button class="tab-btn active" onclick="switchTab('records')">기록</button>
+    <button class="tab-btn" onclick="switchTab('growth')">성장</button>
+    <button class="tab-btn" onclick="switchTab('milestones')">마일스톤</button>
+  </div>
+
+  <!-- RECORDS TAB -->
+  <div class="tab-panel active" id="tab-records">
+    <div class="search-bar">
+      <input type="text" id="recordSearch" placeholder="기록 검색..." oninput="filterRecords()">
+    </div>
+    <div id="recordsList"></div>
+  </div>
+
+  <!-- GROWTH TAB -->
+  <div class="tab-panel" id="tab-growth">
+    <div class="growth-form">
+      <div class="growth-form-title">📏 성장 기록 추가</div>
+      <div class="form-row">
+        <div class="form-group"><label>날짜</label><input type="date" id="growthDate"></div>
+        <div class="form-group"><label>키 (cm)</label><input type="number" id="growthHeight" placeholder="65.0" step="0.1"></div>
+        <div class="form-group"><label>몸무게 (kg)</label><input type="number" id="growthWeight" placeholder="7.5" step="0.1"></div>
+        <div class="form-group" style="display:flex;align-items:flex-end;">
+          <button class="btn-primary btn-boy" id="growthSaveBtn" onclick="saveGrowth()" style="width:100%;">저장</button>
+        </div>
+      </div>
+    </div>
+    <div class="chart-tabs">
+      <button class="chart-tab active" onclick="switchGrowthChart('height',this)">키</button>
+      <button class="chart-tab" onclick="switchGrowthChart('weight',this)">몸무게</button>
+    </div>
+    <div class="chart-container">
+      <div class="chart-title" id="growthChartTitle">키 변화 (cm)</div>
+      <canvas id="growthChart" height="180"></canvas>
+    </div>
+    <div id="growthTable"></div>
+  </div>
+
+  <!-- MILESTONES TAB -->
+  <div class="tab-panel" id="tab-milestones">
+    <div class="milestone-form">
+      <div class="growth-form-title">⭐ 새 마일스톤</div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;"><label>마일스톤</label><input type="text" id="milestoneText" placeholder="예: 처음으로 뒤집기 성공!"></div>
+        <div class="form-group"><label>날짜</label><input type="date" id="milestoneDate"></div>
+        <div class="form-group" style="display:flex;align-items:flex-end;">
+          <button class="btn-primary btn-boy" id="milestoneSaveBtn" onclick="saveMilestone()" style="width:100%;">추가</button>
+        </div>
+      </div>
+    </div>
+    <div id="milestoneList"></div>
+  </div>
+</div>
+
+<!-- ========== RECORD FORM ========== -->
+<div id="page-record-form" class="page">
+  <div class="app-header">
+    <button class="header-back" onclick="goBack('profile')">←</button>
+    <div class="header-title" id="formHeaderTitle">새 관찰 기록</div>
+  </div>
+  <div class="record-form-body">
+    <input type="hidden" id="editRecordId">
+    <input type="hidden" id="formChildName">
+    <div class="form-section">
+      <div class="form-section-title"><span>📅</span> 날짜 및 제목</div>
+      <div class="form-field"><label>날짜</label><input type="date" id="fDate"></div>
+      <div class="form-field"><label>제목</label><input type="text" id="fTitle" placeholder="오늘 하루를 한 문장으로..."></div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><span>📷</span> 사진</div>
+      <div class="form-field">
+        <label>사진 첨부 (900×600 권장)</label>
+        <div class="photo-upload-area" id="photoUploadArea" onclick="document.getElementById('photoInput').click()">
+          <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(event)">
+          <div class="photo-upload-icon">🖼️</div>
+          <div class="photo-upload-text">클릭하여 사진 선택</div>
+        </div>
+        <div id="photoPreviewWrap" style="display:none; margin-top:10px;" class="photo-preview-wrap">
+          <img id="photoPreview" class="photo-preview" alt="선택한 사진">
+          <button class="photo-remove" onclick="removePhoto()">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><span>😊</span> 오늘의 기분</div>
+      <div class="form-field">
+        <label>표정 선택</label>
+        <div class="mood-picker">
+          <div class="mood-opt" onclick="selectMood('😄')">😄</div>
+          <div class="mood-opt" onclick="selectMood('🙂')">🙂</div>
+          <div class="mood-opt" onclick="selectMood('😐')">😐</div>
+          <div class="mood-opt" onclick="selectMood('😢')">😢</div>
+          <div class="mood-opt" onclick="selectMood('😡')">😡</div>
+          <div class="mood-opt" onclick="selectMood('😴')">😴</div>
+          <div class="mood-opt" onclick="selectMood('🤒')">🤒</div>
+          <div class="mood-opt" onclick="selectMood('🥳')">🥳</div>
+        </div>
+        <input type="hidden" id="fMood">
+      </div>
+      <div class="mood-canvas-wrap">
+        <label>또는 표정 직접 그리기</label>
+        <canvas id="moodCanvas" width="160" height="160"></canvas>
+        <div class="canvas-btns">
+          <button class="btn-sm" onclick="clearCanvas()">지우기</button>
+          <button class="btn-sm" id="penToggle" onclick="toggleEraser()">지우개</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><span>🌿</span> 오늘의 행동</div>
+      <div class="form-field"><textarea id="fBehavior" rows="5" placeholder="아이가 어떤 행동을 했나요? 어떤 기분이 들었나요?"></textarea></div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><span>🌱</span> 아이 발달</div>
+      <div class="form-field"><textarea id="fDevelopment" rows="5" placeholder="오늘 관찰한 아이의 발달 사항을 기록해보세요..."></textarea></div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><span>💭</span> 나의 시선</div>
+      <div class="form-field"><textarea id="fMyView" rows="5" placeholder="아이를 보며 어떤 감정이 들었나요? 오늘 하루를 돌아보며..."></textarea></div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title"><span>🏷️</span> 태그 · 마일스톤</div>
+      <div class="form-field">
+        <label>태그</label>
+        <div class="tags-input-wrap">
+          <input type="text" id="tagInput" placeholder="#수면 입력 후 Enter" onkeydown="addTag(event)">
+        </div>
+        <div class="tags-list" id="tagsList"></div>
+      </div>
+      <div class="form-field" style="margin-bottom:0;">
+        <div class="milestone-check-row">
+          <input type="checkbox" id="fIsMilestone">
+          <label for="fIsMilestone">⭐ 이 기록을 마일스톤으로 저장</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn-cancel" onclick="goBack('profile')">취소</button>
+    <button class="btn-save" id="formSaveBtn" onclick="saveRecord()">저장하기</button>
+  </div>
+</div>
+
+<!-- ========== RECORD DETAIL ========== -->
+<div id="page-record-detail" class="page">
+  <div class="app-header">
+    <button class="header-back" onclick="goBack('profile')">←</button>
+    <div class="header-title">관찰 기록</div>
+    <div class="header-right">
+      <button class="btn-edit" onclick="editRecord()">수정</button>
+      <button class="btn-delete" id="detailDeleteBtn" onclick="deleteCurrentRecord()">삭제</button>
+    </div>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+</div>
+
+<script>
+const CHILDREN = {
+  '교현': { name: '이교현', gender: 'boy', emoji: '👦', birth: new Date('2024-03-25') },
+  '교윤': { name: '이교윤', gender: 'girl', emoji: '👧', birth: new Date('2025-06-12') }
+};
+
+let currentChild = null;
+let currentRecordId = null;
+let dashCalYear, dashCalMonth;
+let growthChartInstance = null;
+let currentGrowthType = 'height';
+let isEraser = false;
+let isDrawing = false;
+let formTags = [];
+let formPhotoData = null;
+
+// ---- STORAGE ----
+function getData(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
+function setData(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+function getItem(key) { try { return localStorage.getItem(key); } catch { return null; } }
+function setItem(key, val) { try { localStorage.setItem(key, val); } catch {} }
+function recordsKey(c) { return 'records_' + c; }
+function growthKey(c) { return 'growth_' + c; }
+function msKey(c) { return 'milestones_' + c; }
+function childPhotoKey(c) { return 'childPhoto_' + c; }
+
+// ---- NAV ----
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function goBack(to) {
+  if (to === 'dashboard') { showPage('dashboard'); refreshDashboard(); }
+  else if (to === 'profile') { showPage('profile'); refreshProfilePage(); }
+}
+
+// ---- UTILS ----
+function calcAge(birth) {
+  const now = new Date();
+  const months = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+  if (months < 1) { const days = Math.floor((now - birth) / 86400000); return '생후 ' + days + '일'; }
+  if (months < 24) return '생후 ' + months + '개월';
+  const y = Math.floor(months / 12), r = months % 12;
+  return r > 0 ? y + '세 ' + r + '개월' : y + '세';
+}
+function formatDate(ds) {
+  if (!ds) return '';
+  const d = new Date(ds + 'T00:00:00');
+  return d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일';
+}
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+// ---- CHILD PHOTO ----
+function handleChildPhoto(e, childKey) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    setItem(childPhotoKey(childKey), ev.target.result);
+    updateChildAvatars();
+    showToast('사진이 변경됐어요 📷');
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+function handleProfilePhoto(e) {
+  if (!currentChild) return;
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    setItem(childPhotoKey(currentChild), ev.target.result);
+    updateChildAvatars();
+    updateProfileAvatar();
+    showToast('사진이 변경됐어요 📷');
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+function updateChildAvatars() {
+  ['교현','교윤'].forEach(key => {
+    const photo = getItem(childPhotoKey(key));
+    const el = document.getElementById('dashAvatar' + key);
+    if (!el) return;
+    if (photo) {
+      el.innerHTML = '<img src="' + photo + '" alt="' + key + '">';
+    } else {
+      el.innerHTML = '<span class="child-avatar-emoji">' + CHILDREN[key].emoji + '</span>';
+    }
+  });
+}
+function updateProfileAvatar() {
+  if (!currentChild) return;
+  const photo = getItem(childPhotoKey(currentChild));
+  const wrap = document.getElementById('profileAvatarWrap');
+  if (!wrap) return;
+  if (photo) {
+    document.getElementById('profileAvatarEmoji').style.display = 'none';
+    const existing = wrap.querySelector('img');
+    if (existing) existing.src = photo;
+    else {
+      const img = document.createElement('img');
+      img.src = photo;
+      img.alt = currentChild;
+      wrap.appendChild(img);
+    }
+  } else {
+    document.getElementById('profileAvatarEmoji').style.display = '';
+    const img = wrap.querySelector('img');
+    if (img) img.remove();
+  }
+}
+
+// ---- DASHBOARD ----
+function refreshDashboard() {
+  const now = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  document.getElementById('todayStrip').textContent =
+    now.getFullYear() + '년 ' + (now.getMonth()+1) + '월 ' + now.getDate() + '일 (' + days[now.getDay()] + ')';
+  ['교현','교윤'].forEach(key => {
+    const c = CHILDREN[key];
+    document.getElementById(key==='교현'?'gyohyun-age':'gyoyun-age').textContent = calcAge(c.birth);
+    document.getElementById(key==='교현'?'gyohyun-count':'gyoyun-count').textContent = getData(recordsKey(key)).length;
+  });
+  updateChildAvatars();
+  renderDashCalendar();
+  renderRecentList();
+}
+function renderRecentList() {
+  const all = [];
+  Object.entries(CHILDREN).forEach(([key, c]) => {
+    getData(recordsKey(key)).forEach(r => all.push({...r, childKey: key, childInfo: c}));
+  });
+  all.sort((a,b) => b.date.localeCompare(a.date));
+  const el = document.getElementById('recentList');
+  if (!all.length) {
+    el.innerHTML = '<div class="recent-empty">아직 기록이 없어요.<br>아이 이름을 눌러 첫 기록을 남겨보세요 🌱</div>'; return;
+  }
+  el.innerHTML = '<div class="recent-list">' + all.slice(0,6).map(r =>
+    '<div class="recent-item" onclick="openChildProfile(\'' + r.childKey + '\'); setTimeout(()=>openRecordDetail(\'' + r.id + '\',\'' + r.childKey + '\'),120)">' +
+    '<div class="recent-dot ' + r.childInfo.gender + '"></div>' +
+    '<div class="recent-info"><div class="recent-title">' + (r.title||'(제목 없음)') + '</div>' +
+    '<div class="recent-meta">' + r.childInfo.name + ' · ' + formatDate(r.date) + '</div></div>' +
+    '<div class="recent-mood">' + (r.mood||'') + '</div></div>'
+  ).join('') + '</div>';
+}
+
+// ---- DASHBOARD CALENDAR ----
+let dashCalPopupDate = null;
+let dashCalPopupChild = null;
+
+function initDashCal() {
+  const now = new Date();
+  dashCalYear = now.getFullYear();
+  dashCalMonth = now.getMonth();
+}
+function dashChangeMonth(dir) {
+  dashCalMonth += dir;
+  if (dashCalMonth < 0) { dashCalMonth = 11; dashCalYear--; }
+  if (dashCalMonth > 11) { dashCalMonth = 0; dashCalYear++; }
+  dashCalPopupDate = null;
+  document.getElementById('dashCalPopup').innerHTML = '';
+  renderDashCalendar();
+}
+function renderDashCalendar() {
+  if (dashCalYear === undefined) initDashCal();
+  document.getElementById('dashCalTitle').textContent = dashCalYear + '년 ' + (dashCalMonth+1) + '월';
+
+  // collect records for both children by date
+  const dateMap = {}; // date -> {boy: [...], girl: [...]}
+  Object.entries(CHILDREN).forEach(([key, c]) => {
+    getData(recordsKey(key)).forEach(r => {
+      if (!dateMap[r.date]) dateMap[r.date] = {boy:[], girl:[]};
+      dateMap[r.date][c.gender].push({...r, childKey: key});
+    });
+  });
+
+  const first = new Date(dashCalYear, dashCalMonth, 1).getDay();
+  const daysInMonth = new Date(dashCalYear, dashCalMonth+1, 0).getDate();
+  const today = todayStr();
+  const dayLabels = ['일','월','화','수','목','금','토'];
+  let html = dayLabels.map(d => '<div class="cal-day-label">' + d + '</div>').join('');
+  for (let i=0; i<first; i++) html += '<div></div>';
+  for (let d=1; d<=daysInMonth; d++) {
+    const ds = dashCalYear + '-' + String(dashCalMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const rec = dateMap[ds];
+    const hasBoy = rec && rec.boy.length > 0;
+    const hasGirl = rec && rec.girl.length > 0;
+    const hasAny = hasBoy || hasGirl;
+    const isToday = ds === today;
+    const isSelected = ds === dashCalPopupDate;
+    let dots = '';
+    if (hasBoy) dots += '<div class="cal-dot boy"></div>';
+    if (hasGirl) dots += '<div class="cal-dot girl"></div>';
+    html += '<div class="cal-day' + (hasAny?' has-record':'') + (isToday?' today':'') + (isSelected?' today':'') + '" onclick="' + (hasAny ? 'showDashCalDay(\'' + ds + '\')' : '') + '">' +
+      '<span>' + d + '</span>' +
+      (dots ? '<div class="cal-dots">' + dots + '</div>' : '') +
+      '</div>';
+  }
+  document.getElementById('dashCalGrid').innerHTML = html;
+}
+function showDashCalDay(ds) {
+  dashCalPopupDate = ds;
+  const dateMap = {};
+  Object.entries(CHILDREN).forEach(([key, c]) => {
+    getData(recordsKey(key)).forEach(r => {
+      if (!dateMap[r.date]) dateMap[r.date] = {boy:[], girl:[]};
+      dateMap[r.date][c.gender].push({...r, childKey: key, childInfo: c});
+    });
+  });
+  const rec = dateMap[ds] || {boy:[], girl:[]};
+  if (!dashCalPopupChild) dashCalPopupChild = rec.boy.length ? 'boy' : 'girl';
+
+  const tabs = ['boy','girl'].map(g => {
+    const c = g === 'boy' ? CHILDREN['교현'] : CHILDREN['교윤'];
+    const active = dashCalPopupChild === g;
+    return '<button class="cal-popup-tab' + (active ? ' active-' + g : '') + '" onclick="setDashCalTab(\'' + ds + '\',\'' + g + '\')">' + c.name + ' (' + (dateMap[ds] ? dateMap[ds][g].length : 0) + ')</button>';
+  }).join('');
+
+  const items = (rec[dashCalPopupChild] || []);
+  const listHtml = items.length
+    ? items.map(r =>
+        '<div class="record-card" onclick="openChildProfile(\'' + r.childKey + '\'); setTimeout(()=>openRecordDetail(\'' + r.id + '\',\'' + r.childKey + '\'),120)">' +
+        '<div class="record-card-top"><div class="record-date"></div><div class="record-mood-badge">' + (r.mood||'') + '</div></div>' +
+        '<div class="record-title">' + (r.title||'(제목 없음)') + '</div></div>'
+      ).join('')
+    : '<div class="recent-empty" style="padding:16px;">이 날의 기록이 없어요.</div>';
+
+  document.getElementById('dashCalPopup').innerHTML =
+    '<div class="cal-day-popup">' +
+    '<div class="cal-day-popup-title">' + formatDate(ds) + '</div>' +
+    '<div class="cal-popup-tabs">' + tabs + '</div>' +
+    listHtml + '</div>';
+  renderDashCalendar();
+}
+function setDashCalTab(ds, gender) {
+  dashCalPopupChild = gender;
+  showDashCalDay(ds);
+}
+
+// ---- PROFILE ----
+function openChildProfile(childKey) {
+  currentChild = childKey;
+  const c = CHILDREN[childKey];
+  document.getElementById('profileHeaderTitle').textContent = c.name;
+  document.getElementById('profileHero').className = 'child-hero ' + (c.gender==='boy'?'hero-boy':'hero-girl');
+  document.getElementById('profileAvatarEmoji').textContent = c.emoji;
+  document.getElementById('profileName').textContent = c.name;
+  document.getElementById('profileInfo').textContent = calcAge(c.birth) + ' · ' + (c.gender==='boy'?'우리집 왕자님 👑':'우리집 공주님 👸');
+  document.getElementById('profileAddBtn').className = 'btn-primary ' + (c.gender==='boy'?'btn-boy':'btn-girl');
+  document.getElementById('growthSaveBtn').className = 'btn-primary ' + (c.gender==='boy'?'btn-boy':'btn-girl');
+  document.getElementById('milestoneSaveBtn').className = 'btn-primary ' + (c.gender==='boy'?'btn-boy':'btn-girl');
+  updateProfileAvatar();
+  switchTab('records');
+  showPage('profile');
+}
+function refreshProfilePage() { filterRecords(); renderGrowth(); renderMilestones(); updateProfileAvatar(); }
+
+function switchTab(name) {
+  const names = ['records','growth','milestones'];
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', names[i]===name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name==='records') filterRecords();
+  if (name==='growth') renderGrowth();
+  if (name==='milestones') renderMilestones();
+}
+
+// ---- RECORDS LIST ----
+function filterRecords() {
+  const q = (document.getElementById('recordSearch').value||'').toLowerCase();
+  const records = getData(recordsKey(currentChild)).filter(r =>
+    !q || (r.title||'').toLowerCase().includes(q) ||
+    (r.behavior||'').toLowerCase().includes(q) ||
+    (r.development||'').toLowerCase().includes(q) ||
+    (r.myView||'').toLowerCase().includes(q)
+  ).sort((a,b) => b.date.localeCompare(a.date));
+  const el = document.getElementById('recordsList');
+  if (!records.length) {
+    el.innerHTML = '<div class="recent-empty">' + (q?'검색 결과가 없어요.':'아직 기록이 없어요. 첫 기록을 남겨보세요! 🌿') + '</div>'; return;
+  }
+  el.innerHTML = records.map(r =>
+    '<div class="record-card" onclick="openRecordDetail(\'' + r.id + '\')">' +
+    (r.photo ? '<img src="' + r.photo + '" class="record-photo-thumb" alt="">' : '') +
+    '<div class="record-card-top"><div class="record-date">' + formatDate(r.date) + '</div><div class="record-mood-badge">' + (r.mood||'') + '</div></div>' +
+    '<div class="record-title">' + (r.title||'(제목 없음)') + '</div>' +
+    '<div class="record-preview">' + (r.behavior||r.development||r.myView||'') + '</div>' +
+    '<div class="record-tags">' + (r.isMilestone?'<span class="milestone-badge">⭐ 마일스톤</span>':'') + (r.tags||[]).map(t=>'<span class="tag">#'+t+'</span>').join('') + '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// ---- RECORD DETAIL ----
+function openRecordDetail(id, childKey) {
+  if (childKey) currentChild = childKey;
+  const r = getData(recordsKey(currentChild)).find(x => x.id===id);
+  if (!r) return;
+  currentRecordId = id;
+  document.getElementById('detailDeleteBtn').className = 'btn-delete';
+  const body = document.getElementById('detailBody');
+  body.innerHTML =
+    (r.photo ? '<img src="' + r.photo + '" class="detail-photo" alt="">' : '') +
+    '<div class="detail-date">' + formatDate(r.date) + '</div>' +
+    '<div class="detail-title">' + (r.title||'(제목 없음)') + '</div>' +
+    ((r.mood||r.moodDrawing) ?
+      '<div class="detail-section"><div class="detail-section-label">오늘의 기분</div><div class="detail-mood-row">' +
+      (r.mood ? '<div class="detail-mood-emoji">' + r.mood + '</div>' : '') +
+      (r.moodDrawing ? '<img src="' + r.moodDrawing + '" class="detail-mood-drawing" alt="">' : '') +
+      '</div></div>' : '') +
+    (r.behavior ? '<div class="detail-section"><div class="detail-section-label">오늘의 행동</div><div class="detail-section-content">' + r.behavior + '</div></div>' : '') +
+    (r.development ? '<div class="detail-section"><div class="detail-section-label">아이 발달</div><div class="detail-section-content">' + r.development + '</div></div>' : '') +
+    (r.myView ? '<div class="detail-section"><div class="detail-section-label">나의 시선</div><div class="detail-section-content">' + r.myView + '</div></div>' : '') +
+    (((r.tags&&r.tags.length)||r.isMilestone) ?
+      '<div class="detail-section"><div class="record-tags">' +
+      (r.isMilestone?'<span class="milestone-badge">⭐ 마일스톤</span>':'') +
+      (r.tags||[]).map(t=>'<span class="tag">#'+t+'</span>').join('') +
+      '</div></div>' : '');
+  showPage('record-detail');
+}
+function editRecord() { openNewRecord(currentRecordId); }
+function deleteCurrentRecord() {
+  if (!currentRecordId) return;
+  if (!confirm('이 기록을 삭제할까요?')) return;
+  const records = getData(recordsKey(currentChild)).filter(r => r.id !== currentRecordId);
+  setData(recordsKey(currentChild), records);
+  currentRecordId = null;
+  showToast('기록이 삭제되었어요.');
+  goBack('profile');
+}
+
+// ---- RECORD FORM ----
+function openNewRecord(editId) {
+  const c = CHILDREN[currentChild];
+  document.getElementById('formHeaderTitle').textContent = editId ? '기록 수정' : '새 관찰 기록';
+  document.getElementById('formSaveBtn').className = 'btn-save ' + (c.gender==='boy'?'btn-boy':'btn-girl');
+  document.getElementById('editRecordId').value = editId||'';
+  document.getElementById('formChildName').value = currentChild;
+  formTags=[]; formPhotoData=null; isEraser=false;
+  document.getElementById('penToggle').textContent='지우개';
+  clearCanvas();
+  document.querySelectorAll('.mood-opt').forEach(o=>o.classList.remove('selected'));
+  document.getElementById('photoPreviewWrap').style.display='none';
+  document.getElementById('photoUploadArea').style.display='block';
+  if (editId) {
+    const r = getData(recordsKey(currentChild)).find(x=>x.id===editId);
+    if (r) {
+      document.getElementById('fDate').value=r.date;
+      document.getElementById('fTitle').value=r.title||'';
+      document.getElementById('fBehavior').value=r.behavior||'';
+      document.getElementById('fDevelopment').value=r.development||'';
+      document.getElementById('fMyView').value=r.myView||'';
+      document.getElementById('fMood').value=r.mood||'';
+      document.getElementById('fIsMilestone').checked=r.isMilestone||false;
+      formTags=r.tags||[]; formPhotoData=r.photo||null;
+      if (r.photo) { document.getElementById('photoPreview').src=r.photo; document.getElementById('photoPreviewWrap').style.display='block'; document.getElementById('photoUploadArea').style.display='none'; }
+      if (r.mood) document.querySelectorAll('.mood-opt').forEach(o=>{ if(o.textContent===r.mood) o.classList.add('selected'); });
+      if (r.moodDrawing) { const img=new Image(); img.onload=()=>{ const c2=document.getElementById('moodCanvas').getContext('2d'); c2.drawImage(img,0,0); }; img.src=r.moodDrawing; }
+      renderTagsList();
+    }
+  } else {
+    document.getElementById('fDate').value=todayStr();
+    document.getElementById('fTitle').value='';
+    document.getElementById('fBehavior').value='';
+    document.getElementById('fDevelopment').value='';
+    document.getElementById('fMyView').value='';
+    document.getElementById('fMood').value='';
+    document.getElementById('fIsMilestone').checked=false;
+    renderTagsList();
+  }
+  showPage('record-form');
+}
+function saveRecord() {
+  const childKey = document.getElementById('formChildName').value;
+  const editId = document.getElementById('editRecordId').value;
+  const cvs = document.getElementById('moodCanvas');
+  const ctx2 = cvs.getContext('2d');
+  const imgData = ctx2.getImageData(0,0,cvs.width,cvs.height);
+  const hasDrawing = imgData.data.some((v,i)=>i%4===3&&v>0);
+  const record = {
+    id: editId||uid(),
+    date: document.getElementById('fDate').value||todayStr(),
+    title: document.getElementById('fTitle').value.trim(),
+    photo: formPhotoData,
+    mood: document.getElementById('fMood').value,
+    moodDrawing: hasDrawing ? cvs.toDataURL() : null,
+    behavior: document.getElementById('fBehavior').value.trim(),
+    development: document.getElementById('fDevelopment').value.trim(),
+    myView: document.getElementById('fMyView').value.trim(),
+    tags: formTags,
+    isMilestone: document.getElementById('fIsMilestone').checked,
+    updatedAt: Date.now()
+  };
+  const records = getData(recordsKey(childKey));
+  if (editId) { const idx=records.findIndex(r=>r.id===editId); if(idx>=0) records[idx]=record; else records.push(record); }
+  else { records.push(record); }
+  if (record.isMilestone && record.title && !editId) {
+    const ms = getData(msKey(childKey));
+    ms.push({ id:uid(), text:record.title, date:record.date });
+    setData(msKey(childKey), ms);
+  }
+  setData(recordsKey(childKey), records);
+  showToast('기록이 저장됐어요 🌱');
+  currentChild = childKey;
+  goBack('profile');
+}
+
+// ---- PHOTO ----
+function handlePhoto(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ formPhotoData=ev.target.result; document.getElementById('photoPreview').src=formPhotoData; document.getElementById('photoPreviewWrap').style.display='block'; document.getElementById('photoUploadArea').style.display='none'; };
+  reader.readAsDataURL(file);
+}
+function removePhoto() { formPhotoData=null; document.getElementById('photoPreviewWrap').style.display='none'; document.getElementById('photoUploadArea').style.display='block'; document.getElementById('photoInput').value=''; }
+
+// ---- MOOD CANVAS ----
+const canvas = document.getElementById('moodCanvas');
+const ctx = canvas.getContext('2d');
+ctx.strokeStyle='#3A2E22'; ctx.lineWidth=3; ctx.lineCap='round';
+canvas.addEventListener('mousedown',e=>{isDrawing=true;ctx.beginPath();ctx.moveTo(...getPos(e));});
+canvas.addEventListener('mousemove',e=>{if(!isDrawing)return;ctx.lineTo(...getPos(e));ctx.stroke();});
+canvas.addEventListener('mouseup',()=>isDrawing=false);
+canvas.addEventListener('mouseleave',()=>isDrawing=false);
+canvas.addEventListener('touchstart',e=>{e.preventDefault();isDrawing=true;ctx.beginPath();ctx.moveTo(...getTPos(e));},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!isDrawing)return;ctx.lineTo(...getTPos(e));ctx.stroke();},{passive:false});
+canvas.addEventListener('touchend',()=>isDrawing=false);
+function getPos(e){const r=canvas.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top];}
+function getTPos(e){const r=canvas.getBoundingClientRect();return[e.touches[0].clientX-r.left,e.touches[0].clientY-r.top];}
+function clearCanvas(){ctx.clearRect(0,0,canvas.width,canvas.height);}
+function toggleEraser(){isEraser=!isEraser;ctx.globalCompositeOperation=isEraser?'destination-out':'source-over';document.getElementById('penToggle').textContent=isEraser?'펜으로':'지우개';}
+function selectMood(emoji){document.getElementById('fMood').value=emoji;document.querySelectorAll('.mood-opt').forEach(o=>o.classList.toggle('selected',o.textContent===emoji));}
+
+// ---- TAGS ----
+function addTag(e){if(e.key!=='Enter')return;e.preventDefault();const v=document.getElementById('tagInput').value.replace('#','').trim();if(v&&!formTags.includes(v)){formTags.push(v);renderTagsList();}document.getElementById('tagInput').value='';}
+function removeTag(t){formTags=formTags.filter(x=>x!==t);renderTagsList();}
+function renderTagsList(){document.getElementById('tagsList').innerHTML=formTags.map(t=>'<span class="tag-removable">#'+t+'<button onclick="removeTag(\''+t+'\')">×</button></span>').join('');}
+
+// ---- GROWTH ----
+function renderGrowth(){renderGrowthChart(currentGrowthType);renderGrowthTable();}
+function saveGrowth(){
+  const d=document.getElementById('growthDate').value;
+  const h=parseFloat(document.getElementById('growthHeight').value);
+  const w=parseFloat(document.getElementById('growthWeight').value);
+  if(!d)return showToast('날짜를 입력해주세요.');
+  const data=getData(growthKey(currentChild));
+  const idx=data.findIndex(x=>x.date===d);
+  const entry={date:d,height:isNaN(h)?null:h,weight:isNaN(w)?null:w};
+  if(idx>=0)data[idx]=entry;else data.push(entry);
+  data.sort((a,b)=>a.date.localeCompare(b.date));
+  setData(growthKey(currentChild),data);
+  document.getElementById('growthDate').value='';
+  document.getElementById('growthHeight').value='';
+  document.getElementById('growthWeight').value='';
+  showToast('성장 기록이 저장됐어요!');
+  renderGrowth();
+}
+function switchGrowthChart(type,btn){
+  currentGrowthType=type;
+  document.querySelectorAll('.chart-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('growthChartTitle').textContent=type==='height'?'키 변화 (cm)':'몸무게 변화 (kg)';
+  renderGrowthChart(type);
+}
+function renderGrowthChart(type){
+  const data=getData(growthKey(currentChild));
+  const labels=data.map(d=>{const dt=new Date(d.date+'T00:00:00');return (dt.getMonth()+1)+'/'+ dt.getDate();});
+  const vals=data.map(d=>type==='height'?d.height:d.weight);
+  const color=CHILDREN[currentChild].gender==='boy'?'#5B8DB8':'#C87B9A';
+  const cvs=document.getElementById('growthChart');
+  if(growthChartInstance)growthChartInstance.destroy();
+  if(!data.length){cvs.getContext('2d').clearRect(0,0,cvs.width,cvs.height);return;}
+  growthChartInstance=new Chart(cvs,{type:'line',data:{labels,datasets:[{data:vals,borderColor:color,backgroundColor:color+'22',fill:true,tension:0.3,pointRadius:5,pointBackgroundColor:color}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:11}}}}}});
+}
+function renderGrowthTable(){
+  const data=getData(growthKey(currentChild)).slice().reverse();
+  const el=document.getElementById('growthTable');
+  if(!data.length){el.innerHTML='<div class="recent-empty">아직 성장 기록이 없어요.</div>';return;}
+  el.innerHTML='<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">' +
+    '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+    '<thead><tr style="background:var(--cream2);"><th style="padding:10px 14px;text-align:left;color:var(--text2);font-weight:500;">날짜</th><th style="padding:10px 14px;text-align:right;color:var(--text2);font-weight:500;">키(cm)</th><th style="padding:10px 14px;text-align:right;color:var(--text2);font-weight:500;">몸무게(kg)</th><th style="padding:10px;"></th></tr></thead>' +
+    '<tbody>'+data.map(d=>'<tr style="border-top:1px solid var(--border);"><td style="padding:10px 14px;color:var(--text2);">'+formatDate(d.date)+'</td><td style="padding:10px 14px;text-align:right;">'+(d.height!=null?d.height:'—')+'</td><td style="padding:10px 14px;text-align:right;">'+(d.weight!=null?d.weight:'—')+'</td><td style="padding:10px;text-align:right;"><button onclick="deleteGrowth(\''+d.date+'\')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px;">✕</button></td></tr>').join('')+'</tbody></table></div>';
+}
+function deleteGrowth(date){if(!confirm('이 성장 기록을 삭제할까요?'))return;setData(growthKey(currentChild),getData(growthKey(currentChild)).filter(d=>d.date!==date));renderGrowth();}
+
+// ---- MILESTONES ----
+const MS_ICONS=['🌟','🎉','👣','💬','🤸','🍼','🎨','🧸','🌈','💕'];
+function renderMilestones(){
+  document.getElementById('milestoneDate').value=todayStr();
+  const ms=getData(msKey(currentChild)).slice().reverse();
+  const el=document.getElementById('milestoneList');
+  if(!ms.length){el.innerHTML='<div class="recent-empty">아직 마일스톤이 없어요.<br>첫 번째 특별한 순간을 기록해보세요 ⭐</div>';return;}
+  el.innerHTML=ms.map((m,i)=>
+    '<div class="milestone-item"><div class="milestone-icon">'+MS_ICONS[i%MS_ICONS.length]+'</div>' +
+    '<div class="milestone-info"><div class="milestone-text">'+m.text+'</div><div class="milestone-date-text">'+formatDate(m.date)+'</div></div>' +
+    '<button class="milestone-del" onclick="deleteMilestone(\''+m.id+'\')">✕</button></div>'
+  ).join('');
+}
+function saveMilestone(){
+  const text=document.getElementById('milestoneText').value.trim();
+  const date=document.getElementById('milestoneDate').value;
+  if(!text)return showToast('마일스톤 내용을 입력해주세요.');
+  const ms=getData(msKey(currentChild));
+  ms.push({id:uid(),text,date:date||todayStr()});
+  setData(msKey(currentChild),ms);
+  document.getElementById('milestoneText').value='';
+  showToast('마일스톤이 추가됐어요 ⭐');
+  renderMilestones();
+}
+function deleteMilestone(id){if(!confirm('이 마일스톤을 삭제할까요?'))return;setData(msKey(currentChild),getData(msKey(currentChild)).filter(m=>m.id!==id));renderMilestones();}
+
+// ---- INIT ----
+document.getElementById('growthDate').value = todayStr();
+initDashCal();
+refreshDashboard();
+</script>
+</body>
+</html>
