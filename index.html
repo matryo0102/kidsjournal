@@ -226,6 +226,24 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--cream);color:var(--t
 .modal-divider{border:none;border-top:1px solid var(--border);margin:12px 0;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:white;padding:12px 20px;border-radius:var(--radius);font-size:13px;opacity:0;pointer-events:none;transition:opacity 0.2s;z-index:9999;white-space:nowrap;}
 .toast.show{opacity:1;}
+/* AUTHOR */
+.author-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.author-opt{padding:14px;border:2px solid var(--border);border-radius:var(--radius);background:var(--cream);cursor:pointer;text-align:center;transition:all 0.15s;font-family:'Noto Sans KR',sans-serif;}
+.author-opt:hover{border-color:var(--accent);}
+.author-opt.selected{border-color:var(--accent);background:var(--cream2);}
+.author-opt-icon{font-size:22px;margin-bottom:4px;}
+.author-opt-name{font-size:13px;font-weight:500;color:var(--text);}
+.author-opt-role{font-size:11px;color:var(--text3);margin-top:2px;}
+.author-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+.author-badge.dad{background:#EEF4FB;color:#4A7BA8;}
+.author-badge.mom{background:#FBF0F5;color:#B86A8A;}
+/* VIEW TABS */
+.view-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.view-tab{padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;background:none;font-family:'Noto Sans KR',sans-serif;color:var(--text2);transition:all 0.15s;}
+.view-tab.active{background:var(--accent);color:white;border-color:var(--accent);}
+/* DATE GROUP */
+.date-group-title{font-size:12px;font-weight:500;color:var(--text3);padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;margin-top:16px;}
+.date-group-title:first-child{margin-top:0;}
 @media(max-width:480px){.dash-children{grid-template-columns:1fr;}.dash-actions{grid-template-columns:1fr;}.form-row{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
@@ -319,6 +337,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--cream);color:var(--t
     <button class="tab-btn" onclick="switchTab('milestones')">마일스톤</button>
   </div>
   <div class="tab-panel active" id="tab-records">
+    <div class="view-tabs">
+      <button class="view-tab active" onclick="setViewMode('all',this)">전체</button>
+      <button class="view-tab" onclick="setViewMode('dad',this)">아빠 기록 👨</button>
+      <button class="view-tab" onclick="setViewMode('mom',this)">엄마 기록 👩</button>
+      <button class="view-tab" onclick="setViewMode('date',this)">날짜별 📅</button>
+    </div>
     <div class="search-bar"><input type="text" id="recordSearch" placeholder="기록 검색..." oninput="filterRecords()"></div>
     <div id="recordsList"></div>
   </div>
@@ -356,6 +380,23 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--cream);color:var(--t
   </div>
   <div class="record-form-body">
     <input type="hidden" id="editRecordId"><input type="hidden" id="formChildName">
+    <div class="form-section"><div class="form-section-title"><span>✍️</span> 기록자</div>
+      <div class="form-field" style="margin-bottom:0;">
+        <div class="author-pick">
+          <div class="author-opt" id="authorDad" onclick="selectAuthor('dad')">
+            <div class="author-opt-icon">👨</div>
+            <div class="author-opt-name">이남희</div>
+            <div class="author-opt-role">아빠</div>
+          </div>
+          <div class="author-opt" id="authorMom" onclick="selectAuthor('mom')">
+            <div class="author-opt-icon">👩</div>
+            <div class="author-opt-name">임성은</div>
+            <div class="author-opt-role">엄마</div>
+          </div>
+        </div>
+        <input type="hidden" id="fAuthor">
+      </div>
+    </div>
     <div class="form-section"><div class="form-section-title"><span>📅</span> 날짜 및 제목</div>
       <div class="form-field"><label>날짜</label><input type="date" id="fDate"></div>
       <div class="form-field"><label>제목</label><input type="text" id="fTitle" placeholder="오늘 하루를 한 문장으로..."></div>
@@ -416,8 +457,9 @@ const db=getFirestore(fbApp);
 const storage=getStorage(fbApp);
 
 const CHILDREN={'교현':{name:'이교현',gender:'boy',emoji:'👦',birth:new Date('2024-03-25')},'교윤':{name:'이교윤',gender:'girl',emoji:'👧',birth:new Date('2025-06-12')}};
+const AUTHORS={dad:{name:'이남희',role:'아빠',icon:'👨',cls:'dad'},mom:{name:'임성은',role:'엄마',icon:'👩',cls:'mom'}};
 const CORRECT_PW='0580';
-let currentChild=null,currentRecordId=null,dashCalYear,dashCalMonth,growthChartInstance=null,currentGrowthType='height',isEraser=false,isDrawing=false,formTags=[],formPhotoFile=null,formPhotoPreviewUrl=null,existingPhotoUrl=null,lockBuffer='',dashCalPopupDate=null,dashCalPopupChild=null;
+let currentChild=null,currentRecordId=null,dashCalYear,dashCalMonth,growthChartInstance=null,currentGrowthType='height',isEraser=false,isDrawing=false,formTags=[],formPhotoFile=null,formPhotoPreviewUrl=null,existingPhotoUrl=null,lockBuffer='',dashCalPopupDate=null,dashCalPopupChild=null,currentViewMode='all';
 let cache={records:{'교현':[],'교윤':[]},growth:{'교현':[],'교윤':[]},milestones:{'교현':[],'교윤':[]},photos:{'교현':null,'교윤':null}};
 
 // UTILS
@@ -552,20 +594,42 @@ function switchTab(name){
 }
 window.openChildProfile=openChildProfile;window.switchTab=switchTab;
 
+// AUTHOR
+function selectAuthor(a){document.getElementById('fAuthor').value=a;document.getElementById('authorDad').classList.toggle('selected',a==='dad');document.getElementById('authorMom').classList.toggle('selected',a==='mom');}
+window.selectAuthor=selectAuthor;
+
+// VIEW MODE
+function setViewMode(mode,btn){currentViewMode=mode;document.querySelectorAll('.view-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filterRecords();}
+window.setViewMode=setViewMode;
+
 // RECORDS
 function filterRecords(){
   const q=(document.getElementById('recordSearch').value||'').toLowerCase();
-  const recs=cache.records[currentChild].filter(r=>!q||(r.title||'').toLowerCase().includes(q)||(r.behavior||'').toLowerCase().includes(q)||(r.development||'').toLowerCase().includes(q)||(r.myView||'').toLowerCase().includes(q));
+  let recs=cache.records[currentChild].filter(r=>!q||(r.title||'').toLowerCase().includes(q)||(r.behavior||'').toLowerCase().includes(q)||(r.development||'').toLowerCase().includes(q)||(r.myView||'').toLowerCase().includes(q));
+  if(currentViewMode==='dad')recs=recs.filter(r=>r.author==='dad');
+  else if(currentViewMode==='mom')recs=recs.filter(r=>r.author==='mom');
   const el=document.getElementById('recordsList');
   if(!recs.length){el.innerHTML='<div class="recent-empty">'+(q?'검색 결과가 없어요.':'아직 기록이 없어요. 첫 기록을 남겨보세요! 🌿')+'</div>';return;}
-  el.innerHTML=recs.map(r=>'<div class="record-card" onclick="openRecordDetail(\''+r.id+'\',\''+currentChild+'\')">'+(r.photo?'<img src="'+r.photo+'" class="record-photo-thumb" alt="">':'')+'<div class="record-card-top"><div class="record-date">'+fmtDate(r.date)+'</div><div class="record-mood-badge">'+(r.mood||'')+'</div></div><div class="record-title">'+(r.title||'(제목 없음)')+'</div><div class="record-preview">'+(r.behavior||r.development||r.myView||'')+'</div><div class="record-tags">'+(r.isMilestone?'<span class="milestone-badge">⭐ 마일스톤</span>':'')+(r.tags||[]).map(t=>'<span class="tag">#'+t+'</span>').join('')+'</div></div>').join('');
+  if(currentViewMode==='date'){
+    // 날짜별 그룹
+    const groups={};
+    recs.forEach(r=>{if(!groups[r.date])groups[r.date]=[];groups[r.date].push(r);});
+    const dates=Object.keys(groups).sort((a,b)=>b.localeCompare(a));
+    el.innerHTML=dates.map(d=>'<div class="date-group-title">'+fmtDate(d)+'</div>'+groups[d].map(r=>recordCardHtml(r)).join('')).join('');
+  } else {
+    el.innerHTML=recs.map(r=>recordCardHtml(r)).join('');
+  }
+}
+function recordCardHtml(r){
+  const a=r.author?AUTHORS[r.author]:null;
+  return '<div class="record-card" onclick="openRecordDetail(\''+r.id+'\',\''+currentChild+'\')">'+(r.photo?'<img src="'+r.photo+'" class="record-photo-thumb" alt="">':'')+'<div class="record-card-top"><div class="record-date">'+fmtDate(r.date)+(a?' <span class="author-badge '+a.cls+'">'+a.icon+' '+a.role+'</span>':'')+'</div><div class="record-mood-badge">'+(r.mood||'')+'</div></div><div class="record-title">'+(r.title||'(제목 없음)')+'</div><div class="record-preview">'+(r.behavior||r.development||r.myView||'')+'</div><div class="record-tags">'+(r.isMilestone?'<span class="milestone-badge">⭐ 마일스톤</span>':'')+(r.tags||[]).map(t=>'<span class="tag">#'+t+'</span>').join('')+'</div></div>';
 }
 window.filterRecords=filterRecords;
 
 // DETAIL
 function openRecordDetail(id,k){
   if(k)currentChild=k;const r=cache.records[currentChild].find(x=>x.id===id);if(!r)return;currentRecordId=id;
-  document.getElementById('detailBody').innerHTML=(r.photo?'<img src="'+r.photo+'" class="detail-photo" alt="">':'')+'<div class="detail-date">'+fmtDate(r.date)+'</div><div class="detail-title">'+(r.title||'(제목 없음)')+'</div>'+((r.mood||r.moodDrawing)?'<div class="detail-section"><div class="detail-section-label">오늘의 기분</div><div class="detail-mood-row">'+(r.mood?'<div class="detail-mood-emoji">'+r.mood+'</div>':'')+(r.moodDrawing?'<img src="'+r.moodDrawing+'" class="detail-mood-drawing" alt="">':'')+'</div></div>':'')+(r.behavior?'<div class="detail-section"><div class="detail-section-label">오늘의 행동</div><div class="detail-section-content">'+r.behavior+'</div></div>':'')+(r.development?'<div class="detail-section"><div class="detail-section-label">아이 발달</div><div class="detail-section-content">'+r.development+'</div></div>':'')+(r.myView?'<div class="detail-section"><div class="detail-section-label">나의 시선</div><div class="detail-section-content">'+r.myView+'</div></div>':'')+(((r.tags&&r.tags.length)||r.isMilestone)?'<div class="detail-section"><div class="record-tags">'+(r.isMilestone?'<span class="milestone-badge">⭐ 마일스톤</span>':'')+(r.tags||[]).map(t=>'<span class="tag">#'+t+'</span>').join('')+'</div></div>':'');
+  document.getElementById('detailBody').innerHTML=(r.photo?'<img src="'+r.photo+'" class="detail-photo" alt="">':'')+'<div class="detail-date">'+fmtDate(r.date)+(r.author?'&nbsp;<span class="author-badge '+AUTHORS[r.author].cls+'">'+AUTHORS[r.author].icon+' '+AUTHORS[r.author].role+'</span>':'')+'</div><div class="detail-title">'+(r.title||'(제목 없음)')+'</div>'+((r.mood||r.moodDrawing)?'<div class="detail-section"><div class="detail-section-label">오늘의 기분</div><div class="detail-mood-row">'+(r.mood?'<div class="detail-mood-emoji">'+r.mood+'</div>':'')+(r.moodDrawing?'<img src="'+r.moodDrawing+'" class="detail-mood-drawing" alt="">':'')+'</div></div>':'')+(r.behavior?'<div class="detail-section"><div class="detail-section-label">오늘의 행동</div><div class="detail-section-content">'+r.behavior+'</div></div>':'')+(r.development?'<div class="detail-section"><div class="detail-section-label">아이 발달</div><div class="detail-section-content">'+r.development+'</div></div>':'')+(r.myView?'<div class="detail-section"><div class="detail-section-label">나의 시선</div><div class="detail-section-content">'+r.myView+'</div></div>':'')+(((r.tags&&r.tags.length)||r.isMilestone)?'<div class="detail-section"><div class="record-tags">'+(r.isMilestone?'<span class="milestone-badge">⭐ 마일스톤</span>':'')+(r.tags||[]).map(t=>'<span class="tag">#'+t+'</span>').join('')+'</div></div>':'');
   showPage('record-detail');
 }
 function editRecord(){openNewRecord(currentRecordId);}
@@ -588,6 +652,10 @@ function openNewRecord(editId){
   document.getElementById('penToggle').textContent='지우개';clearCanvas();
   document.querySelectorAll('.mood-opt').forEach(o=>o.classList.remove('selected'));
   document.getElementById('photoPreviewWrap').style.display='none';document.getElementById('photoUploadArea').style.display='block';
+  // 기록자 초기화
+  document.getElementById('fAuthor').value='';
+  document.getElementById('authorDad').classList.remove('selected');
+  document.getElementById('authorMom').classList.remove('selected');
   if(editId){
     const r=cache.records[currentChild].find(x=>x.id===editId);
     if(r){
@@ -599,6 +667,7 @@ function openNewRecord(editId){
       if(r.photo){document.getElementById('photoPreview').src=r.photo;document.getElementById('photoPreviewWrap').style.display='block';document.getElementById('photoUploadArea').style.display='none';}
       if(r.mood)document.querySelectorAll('.mood-opt').forEach(o=>{if(o.textContent===r.mood)o.classList.add('selected');});
       if(r.moodDrawing){const img=new Image();img.onload=()=>{document.getElementById('moodCanvas').getContext('2d').drawImage(img,0,0);};img.src=r.moodDrawing;}
+      if(r.author)selectAuthor(r.author);
       renderTagsList();
     }
   } else {
@@ -619,7 +688,7 @@ async function saveRecord(){
       const r2=ref(storage,'records/'+childKey+'/'+uid()+'.jpg');
       await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=async ev=>{try{await uploadString(r2,ev.target.result,'data_url');photoUrl=await getDownloadURL(r2);res();}catch(e){rej(e);}};fr.readAsDataURL(formPhotoFile);});
     }
-    const record={id:editId||uid(),date:document.getElementById('fDate').value||today(),title:document.getElementById('fTitle').value.trim(),photo:photoUrl||null,mood:document.getElementById('fMood').value,moodDrawing:hasDrawing?cvs.toDataURL():null,behavior:document.getElementById('fBehavior').value.trim(),development:document.getElementById('fDevelopment').value.trim(),myView:document.getElementById('fMyView').value.trim(),tags:formTags,isMilestone:document.getElementById('fIsMilestone').checked,updatedAt:Date.now()};
+    const record={id:editId||uid(),date:document.getElementById('fDate').value||today(),title:document.getElementById('fTitle').value.trim(),photo:photoUrl||null,mood:document.getElementById('fMood').value,moodDrawing:hasDrawing?cvs.toDataURL():null,behavior:document.getElementById('fBehavior').value.trim(),development:document.getElementById('fDevelopment').value.trim(),myView:document.getElementById('fMyView').value.trim(),tags:formTags,isMilestone:document.getElementById('fIsMilestone').checked,author:document.getElementById('fAuthor').value||null,updatedAt:Date.now()};
     await setDoc(doc(db,'children',childKey,'records',record.id),record);
     const idx=cache.records[childKey].findIndex(r=>r.id===record.id);
     if(idx>=0)cache.records[childKey][idx]=record;else cache.records[childKey].unshift(record);
