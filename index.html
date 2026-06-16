@@ -273,10 +273,161 @@
     .dash-actions { grid-template-columns: 1fr; }
     .form-row { grid-template-columns: 1fr 1fr; }
   }
+
+  /* ===== LOCK SCREEN ===== */
+  #lockScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--cream);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lock-box {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 48px 36px;
+    text-align: center;
+    width: 320px;
+    box-shadow: 0 8px 40px rgba(58,46,34,0.13);
+  }
+  .lock-icon { font-size: 48px; margin-bottom: 16px; }
+  .lock-title { font-family: 'Noto Serif KR', serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .lock-sub { font-size: 13px; color: var(--text3); margin-bottom: 28px; }
+  .lock-input-wrap { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+  .lock-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--border); background: var(--cream);
+    transition: all 0.15s;
+  }
+  .lock-dot.filled { background: var(--accent); border-color: var(--accent); }
+  .lock-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+  .lock-key {
+    height: 56px; border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--cream); font-size: 20px; font-weight: 500;
+    cursor: pointer; font-family: 'Noto Sans KR', sans-serif; color: var(--text);
+    transition: background 0.1s, transform 0.1s;
+  }
+  .lock-key:hover { background: var(--cream2); }
+  .lock-key:active { transform: scale(0.94); }
+  .lock-key.del { font-size: 16px; color: var(--text2); }
+  .lock-error { font-size: 13px; color: var(--red); height: 20px; margin-top: 4px; }
+  .lock-shake { animation: shake 0.35s ease; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-8px)}
+    40%{transform:translateX(8px)}
+    60%{transform:translateX(-5px)}
+    80%{transform:translateX(5px)}
+  }
+
+  /* ===== DATA EXPORT/IMPORT ===== */
+  .settings-btn {
+    position: absolute; top: 50%; right: 24px; transform: translateY(-50%);
+    background: none; border: none; font-size: 20px; cursor: pointer;
+    color: var(--text3); padding: 4px;
+  }
+  .settings-btn:hover { color: var(--text2); }
+  .dash-hero { position: relative; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(58,46,34,0.4);
+    z-index: 500; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-box {
+    background: var(--white); border-radius: var(--radius-lg);
+    padding: 28px; width: min(420px, 90vw);
+    box-shadow: 0 8px 40px rgba(58,46,34,0.18);
+    transform: translateY(12px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal-box { transform: translateY(0); }
+  .modal-title { font-family: 'Noto Serif KR', serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .modal-sub { font-size: 13px; color: var(--text3); margin-bottom: 20px; line-height: 1.6; }
+  .modal-btns { display: flex; flex-direction: column; gap: 10px; }
+  .modal-btn {
+    width: 100%; padding: 14px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--cream);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif; color: var(--text);
+    text-align: left; display: flex; align-items: center; gap: 12px;
+    transition: background 0.15s;
+  }
+  .modal-btn:hover { background: var(--cream2); }
+  .modal-btn-icon { font-size: 22px; }
+  .modal-btn-info { flex: 1; }
+  .modal-btn-label { font-size: 13px; font-weight: 500; }
+  .modal-btn-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .modal-close { margin-top: 14px; width: 100%; padding: 10px; border: none; background: none; font-size: 13px; color: var(--text3); cursor: pointer; font-family: 'Noto Sans KR', sans-serif; }
+  .modal-close:hover { color: var(--text2); }
+  .modal-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
+
+<!-- ========== LOCK SCREEN ========== -->
+<div id="lockScreen">
+  <div class="lock-box" id="lockBox">
+    <div class="lock-icon">🌱</div>
+    <div class="lock-title">우리 아이 관찰 기록지</div>
+    <div class="lock-sub">비밀번호를 입력해주세요</div>
+    <div class="lock-input-wrap" id="lockDots">
+      <div class="lock-dot" id="ld0"></div>
+      <div class="lock-dot" id="ld1"></div>
+      <div class="lock-dot" id="ld2"></div>
+      <div class="lock-dot" id="ld3"></div>
+    </div>
+    <div class="lock-keypad">
+      <button class="lock-key" onclick="lockInput('1')">1</button>
+      <button class="lock-key" onclick="lockInput('2')">2</button>
+      <button class="lock-key" onclick="lockInput('3')">3</button>
+      <button class="lock-key" onclick="lockInput('4')">4</button>
+      <button class="lock-key" onclick="lockInput('5')">5</button>
+      <button class="lock-key" onclick="lockInput('6')">6</button>
+      <button class="lock-key" onclick="lockInput('7')">7</button>
+      <button class="lock-key" onclick="lockInput('8')">8</button>
+      <button class="lock-key" onclick="lockInput('9')">9</button>
+      <button class="lock-key" style="visibility:hidden"></button>
+      <button class="lock-key" onclick="lockInput('0')">0</button>
+      <button class="lock-key del" onclick="lockDelete()">⌫</button>
+    </div>
+    <div class="lock-error" id="lockError"></div>
+  </div>
+</div>
+
+<!-- ========== DATA MODAL ========== -->
+<div class="modal-overlay" id="dataModal" onclick="closeDataModal(event)">
+  <div class="modal-box">
+    <div class="modal-title">⚙️ 데이터 관리</div>
+    <div class="modal-sub">기록을 백업하거나 다른 기기로 옮길 수 있어요.<br>나중에 서버 이전 시에도 활용하세요.</div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="exportData()">
+        <div class="modal-btn-icon">📤</div>
+        <div class="modal-btn-info">
+          <div class="modal-btn-label">데이터 내보내기</div>
+          <div class="modal-btn-desc">전체 기록을 JSON 파일로 저장</div>
+        </div>
+      </button>
+      <button class="modal-btn" onclick="document.getElementById('importFileInput').click()">
+        <div class="modal-btn-icon">📥</div>
+        <div class="modal-btn-info">
+          <div class="modal-btn-label">데이터 가져오기</div>
+          <div class="modal-btn-desc">백업 파일을 불러와서 복원</div>
+        </div>
+      </button>
+      <hr class="modal-divider">
+      <button class="modal-btn" onclick="lockApp()" style="border-color: var(--red);">
+        <div class="modal-btn-icon">🔒</div>
+        <div class="modal-btn-info">
+          <div class="modal-btn-label">잠금</div>
+          <div class="modal-btn-desc">앱을 잠금 화면으로 돌아가기</div>
+        </div>
+      </button>
+    </div>
+    <button class="modal-close" onclick="closeDataModal()">닫기</button>
+  </div>
+</div>
+<input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importData(event)">
 
 <!-- hidden file inputs for child photos -->
 <input type="file" id="photoInputGyohyun" accept="image/*" style="display:none" onchange="handleChildPhoto(event,'교현')">
@@ -288,6 +439,7 @@
   <div class="dash-hero">
     <div class="dash-hero-title">🌱 우리 아이 관찰 기록지</div>
     <div class="dash-hero-sub">이교현 · 이교윤의 소중한 하루하루</div>
+    <button class="settings-btn" onclick="openDataModal()" title="데이터 관리">⚙️</button>
   </div>
   <div class="dash-date-strip" id="todayStrip"></div>
 
@@ -1043,10 +1195,111 @@ function saveMilestone(){
 }
 function deleteMilestone(id){if(!confirm('이 마일스톤을 삭제할까요?'))return;setData(msKey(currentChild),getData(msKey(currentChild)).filter(m=>m.id!==id));renderMilestones();}
 
+// ---- LOCK SCREEN ----
+const CORRECT_PW = '0580';
+let lockBuffer = '';
+let isLocked = true;
+
+function lockInput(digit) {
+  if (lockBuffer.length >= 4) return;
+  lockBuffer += digit;
+  updateLockDots();
+  if (lockBuffer.length === 4) {
+    setTimeout(checkPassword, 120);
+  }
+}
+function lockDelete() {
+  lockBuffer = lockBuffer.slice(0, -1);
+  updateLockDots();
+  document.getElementById('lockError').textContent = '';
+}
+function updateLockDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('ld' + i).classList.toggle('filled', i < lockBuffer.length);
+  }
+}
+function checkPassword() {
+  if (lockBuffer === CORRECT_PW) {
+    isLocked = false;
+    document.getElementById('lockScreen').style.display = 'none';
+    sessionStorage.setItem('unlocked', '1');
+  } else {
+    document.getElementById('lockBox').classList.add('lock-shake');
+    document.getElementById('lockError').textContent = '비밀번호가 틀렸어요.';
+    setTimeout(() => {
+      document.getElementById('lockBox').classList.remove('lock-shake');
+      lockBuffer = '';
+      updateLockDots();
+    }, 400);
+  }
+}
+function lockApp() {
+  isLocked = true;
+  lockBuffer = '';
+  updateLockDots();
+  sessionStorage.removeItem('unlocked');
+  document.getElementById('lockError').textContent = '';
+  document.getElementById('lockScreen').style.display = 'flex';
+  closeDataModal();
+}
+
+// ---- DATA MODAL ----
+function openDataModal() { document.getElementById('dataModal').classList.add('open'); }
+function closeDataModal(e) {
+  if (e && e.target !== document.getElementById('dataModal')) return;
+  document.getElementById('dataModal').classList.remove('open');
+}
+
+// ---- EXPORT ----
+function exportData() {
+  const allKeys = ['records_교현','records_교윤','growth_교현','growth_교윤','milestones_교현','milestones_교윤','childPhoto_교현','childPhoto_교윤'];
+  const backup = { exportedAt: new Date().toISOString(), version: 1, data: {} };
+  allKeys.forEach(k => {
+    const raw = localStorage.getItem(k);
+    if (raw) backup.data[k] = JSON.parse(raw);
+  });
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = '아이기록_백업_' + dateStr + '.json';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('백업 파일이 저장됐어요 📤');
+  closeDataModal();
+}
+
+// ---- IMPORT ----
+function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const backup = JSON.parse(ev.target.result);
+      if (!backup.data) throw new Error('잘못된 형식');
+      if (!confirm('현재 데이터를 백업 파일로 덮어쓸까요?\n기존 기록이 모두 교체됩니다.')) return;
+      Object.entries(backup.data).forEach(([k, v]) => {
+        localStorage.setItem(k, JSON.stringify(v));
+      });
+      showToast('데이터를 성공적으로 불러왔어요 📥');
+      closeDataModal();
+      refreshDashboard();
+    } catch {
+      showToast('파일을 읽을 수 없어요. 올바른 백업 파일인지 확인해주세요.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
 // ---- INIT ----
 document.getElementById('growthDate').value = todayStr();
 initDashCal();
 refreshDashboard();
-</script>
+
+// 세션 중 이미 잠금 해제했으면 바로 열기
+if (sessionStorage.getItem('unlocked') === '1') {
+  isLocked = false;
+  document.getElementById('lockScreen').style.display = 'none';
+}</script>
 </body>
 </html>
